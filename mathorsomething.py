@@ -1,6 +1,6 @@
 from pygl import *
 from math import floor, ceil, pi, sin
-from random import random
+from random import random, seed
 
 class Candidate:
     def __init__(self, position, color):
@@ -24,6 +24,8 @@ purple = vec3(153, 0, 204)
 blue = vec3(0,0,255)
 
 grey = vec3(128)
+
+sqrt2 = sqrt(2)
 
 def v3(numba):
     return vec3(numba)
@@ -140,25 +142,51 @@ def fptp2(uv, ctx):
     candidates = [candidate_yellow,candidate_red,candidate_purple]
     uv /= ctx.size
     first_past_the_post = candidate_yellow
-    first_past_the_post_distance = 0
+    first_past_the_post_distance = 10000
     for i in range(3):
         x = candidates[i]
         current_distance = distance(vec2(x.x,x.y),uv)
-        if current_distance>first_past_the_post_distance:
+        if current_distance<first_past_the_post_distance:
             first_past_the_post_distance = current_distance
             first_past_the_post = x
         if current_distance<0.01:
             print(f"perfect fit for {uv}!")
             return green
-
-    if first_past_the_post_distance<0.25:
-        print(f"{uv} didn't vote!")
-        return grey
     return first_past_the_post.color
 
 
-
-
+def voronoi(uv,ctx):
+    match ctx.data[2]:
+        case "time":
+            seed(ctx.time)
+        case "x" | "y":
+            seed(ctx.data[3])
+        case _:
+            seed(ctx.textures[2])
+    points = []
+    uv /= ctx.size
+    for _ in range(int(ctx.textures[0])):
+        pos = vec2(random(),random())
+        if ctx.data[2] == "x":
+            pos += vec2(ctx.time/48,0)
+        elif ctx.data[2] == "y":
+            pos += vec2(0,ctx.time/48)
+        pos = pos % vec2(1)
+        points.append(Candidate(pos,vec3(random()*255,random()*255,random()*255)))
+    first_past_the_post_distance = 10000
+    first_past_the_post = points[0]
+    for x in points:
+        current_distance = distance(vec2(x.x,x.y),uv)
+        if current_distance<first_past_the_post_distance:
+            first_past_the_post_distance = current_distance
+            first_past_the_post = x
+        if current_distance<0.01:
+            print(f"perfect fit for {uv}!")
+            return green
+    if ctx.textures[1] == "color":
+        return first_past_the_post.color
+    else:
+        return vec3(first_past_the_post_distance*(255/sqrt2))
 
 def shaderpicker():
     return {"interlaced horizontality":shader,
@@ -169,5 +197,6 @@ def shaderpicker():
             "sobel mag":sobel,
             "square thing":squarething,
             "First Past the Post (the data are the positions of candidates formatted as x,y)":fptp,
-            "ditto but weird":fptp2
+            "ditto but no non-voters":fptp2,
+            "voronoi":Shaderdata(voronoi,"First Data is number of points, if second data is color it will show the color, otherwise it will show the distance, third data is the seed, if the third data is x or y, the 4th data is the seed",4)
             }
