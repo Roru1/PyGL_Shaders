@@ -47,7 +47,13 @@ purple = vec3(153, 0, 204)
 
 blue = vec3(0,0,255)
 
+black = vec3(0)
+
 grey = vec3(128)
+
+white = vec3(255)
+
+psudoblack = vec3(0,7,15)
 
 sqrt2 = sqrt(2)
 
@@ -287,6 +293,22 @@ def polar(uv,ctx):
     uv = vec2(sqrt(uv.x*uv.x+uv.y*uv.y),atan2(uv.y,uv.x)/tau)
     return sampleinterpolated(ctx.textures[0],uv.x,uv.y)
 
+def multchart(uv,ctx):
+    match len(str(int(uv.x*uv.y))):
+        case 1: return green
+        case 2: return yellow
+        case 3: return red
+        case 4: return blue
+        case 5: return black
+        case 6: return grey
+        case 7: return white
+    return vec3(random()*255,random()*255,random()*255)
+
+def gradtest(uv,ctx):
+    t = uv.x/ctx.size.x
+    return gradient([red,yellow,green],t)
+
+
 def shaderpicker():
     return {"interlaced horizontality":shader,
             "siny":sinheigh,
@@ -307,5 +329,9 @@ def shaderpicker():
             "general halftone": generalhalftone,
             "Cartesian": Shaderdata(shader2,"A cartesian transform", ["Texture"]),
             "Polar": Shaderdata(polar, "A polar transform", ["Texture"]),
-            "Film Grain": Shaderdata(filmgrain,"is like film with silver halide crystals, inspired by a captain dissilusion video",["Texture"])
+            "Film Grain": Shaderdata(filmgrain,"is like film with silver halide crystals, inspired by a captain dissilusion video",["Texture"]),
+            "Multiplication chart visualizer": Shaderdata(multchart,"This shows a visualization i have had in my mind about multiplication charts", []),
+            "Gradient Test": Shaderdata(gradtest,
+                                                          "This shows a visualization of something how about you find out",
+                                                          [])
             }
